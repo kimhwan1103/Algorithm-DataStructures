@@ -121,12 +121,452 @@ list2[0:2]  # [[1, 2], [3, 4]]
 
 ## 연결 리스트
 
-추후 추가 예정
+연결 리스트는 데이터를 연속된 메모리 공간에 저장하지 않고 각 데이터가 다음 위치를 가리키는 방식으로 구성된 선형적인 자료구조이다.
+
+각 데이터 단위를 노드라고 하고 노드는 데이터를 저장하는 공간과 다음 노드를 가리키는 참조를 포함시킨다.
+
+배열은 인덱스를 활용하여 원소에 쉽게 접근할 수 있지만 원소를 추가하거나 삭제할 때 연속된 메모리 공간에서 이동해야 하므로 시간이 걸린다. 하지만 연결 리스트 같은 경우 자료의 크기가 정해져 있지 않거나 추가와 삭제가 자주 발생하는 경우에는 연결리스트가 더 적합하다.
+
+### 단일 연결 리스트 구조
+
+- 각 노드는 값과 다음 노드의 참조를 저장한다
+- head는 연결 리스트의 첫번째 노드를 가리키며 연결 리스트에 접근하기 위한 시작점 역할을 한다.
+
+### 연결 리스트의 주요 특징
+
+- 동적 크기 조절 : 배열과 달리 크기가 정의되어 있지 않아 필요에 따라 노드를 추가하거나 삭제가 가능하다
+- 삽입과 삭제가 쉬움 : 배열은 삽입/삭제 시 이후 모든 원소를 이동시켜야 한다. 연결 리스트는 참조만 바꾸면 되므로 효율적이다.
+- 메모리 효율성 : 배열은 미리 메모리 공간을 할당해야한다. 연결리스트는 필요한 만큼만 메모리를 사용하므로 메모리 낭비를 줄일수 있다.
+
+### 노드 구현
+
+파이썬은 모든 것이 객체이므로 객체 지향 방식으로 연결 리스트를 비교적 쉽게 구현할 수 있다.
+
+```python
+class Node:
+    def __init__(self, data):
+        self.data = data  # 값을 저장
+        self.next = None  # 다음 노드를 가리킴
+```
+
+### 간단한 연결 리스트 만들기
+
+```python
+# 노드 생성 및 연결
+head = Node(1)
+head.next = Node(2)
+head.next.next = Node(3)
+
+# 순회하며 출력 (head를 직접 이동하면 리스트를 잃으므로 임시 변수 사용)
+node = head
+while node:
+    print(node.data)
+    node = node.next
+
+# 끝에 새 노드 추가
+node = head
+while node.next:
+    node = node.next
+node.next = Node(4)
+
+# 처음에 새 노드 추가
+node = Node(0)
+node.next = head
+head = node
+```
+
+### LinkedList 클래스 구현
+
+| 메서드 | 설명 |
+|--------|------|
+| `appendleft(data)` | 리스트 앞에 노드 추가 |
+| `append(data)` | 리스트 끝에 노드 추가 |
+| `popleft()` | 첫 번째 노드를 꺼내서 반환 |
+| `pop()` | 마지막 노드를 꺼내서 반환 |
+| `remove(target)` | 특정 값을 가진 노드 삭제 |
+| `insert(i, data)` | 특정 인덱스에 노드 삽입 |
+| `reverse()` | 연결 리스트 뒤집기 |
+
+#### appendleft — 앞에 추가
+
+```python
+def appendleft(self, data):
+    if self.head is None:
+        self.head = Node(data)
+    else:
+        node = Node(data)
+        node.next = self.head
+        self.head = node
+    self.length += 1
+```
+
+#### append — 끝에 추가
+
+```python
+def append(self, data):
+    if self.head is None:
+        self.head = Node(data)
+    else:
+        node = self.head
+        while node.next is not None:
+            node = node.next
+        node.next = Node(data)
+    self.length += 1
+```
+
+#### popleft — 앞에서 꺼내기
+
+값을 반환해야 하므로 head를 옮기기 전에 임시 변수에 저장해야 한다.
+
+```python
+def popleft(self):
+    if self.head is None:
+        return None
+    node = self.head
+    self.head = self.head.next
+    self.length -= 1
+    return node.data
+```
+
+#### pop — 끝에서 꺼내기
+
+마지막 노드를 제거하려면 이전 노드(prev)의 next를 None으로 바꿔야 하므로 임시 노드 2개가 필요하다.
+
+```python
+def pop(self):
+    if self.head is None:
+        return None
+    node = self.head
+    while node.next is not None:
+        prev = node
+        node = node.next
+    if node == self.head:
+        self.head = None
+    else:
+        prev.next = None
+    self.length -= 1
+    return node.data
+```
+
+#### remove — 특정 값 삭제
+
+popleft와 pop의 아이디어를 조합. node는 삭제할 값을 찾을 때까지 이동하고 prev는 그 뒤를 따라간다.
+
+```python
+def remove(self, target):
+    if self.head is None:
+        return False
+    node = self.head
+    while node is not None and node.data != target:
+        prev = node
+        node = node.next
+    if node is None:
+        return False
+    if node == self.head:
+        self.head = self.head.next
+    else:
+        prev.next = node.next
+    self.length -= 1
+    return True
+```
+
+#### insert — 특정 위치에 삽입
+
+인덱스가 범위를 벗어나면 appendleft 또는 append로 처리한다.
+
+```python
+def insert(self, i, data):
+    if i <= 0:
+        self.appendleft(data)
+    elif i >= self.length:
+        self.append(data)
+    else:
+        node = self.head
+        for _ in range(i - 1):
+            node = node.next
+        new_node = Node(data)
+        new_node.next = node.next
+        node.next = new_node
+        self.length += 1
+```
+
+#### reverse — 뒤집기
+
+node.next를 이전 노드로 바꾸면 다음 노드와의 연결이 끊어지므로, 다음 노드를 미리 저장할 변수(ahead)가 필요하다.
+
+```python
+def reverse(self):
+    if self.length < 2:
+        return
+    prev = None
+    ahead = self.head.next
+    while ahead:
+        self.head.next = prev
+        prev = self.head
+        self.head = ahead
+        ahead = ahead.next
+    self.head.next = prev
+```
+
+### 시간복잡도
+
+| 연산 | 시간복잡도 | 이유 |
+|------|-----------|------|
+| `appendleft()` | O(1) | head만 변경 |
+| `append()` | O(n) | 끝까지 순회 필요 |
+| `popleft()` | O(1) | head만 변경 |
+| `pop()` | O(n) | 끝까지 순회 필요 |
+| `insert(i)` | O(n) | 삽입 지점까지 순회 |
+| `remove()` | O(n) | 값을 찾을 때까지 순회 |
+| `reverse()` | O(n) | 전체 노드 순회 |
+| 인덱스 접근 | O(n) | 처음부터 순회해야 함 (배열은 O(1)) |
+
+### 코딩 테스트에서는?
+
+파이썬에서 연결 리스트를 직접 구현할 일은 거의 없다. 대부분 `list`나 `collections.deque`로 대체한다.
+
+| 목적 | 사용할 것 |
+|------|----------|
+| 자료구조 수업/시험 | 직접 구현 |
+| 코딩 테스트 | `list` 또는 `deque` |
+| 실무 개발 | `list` 또는 `deque` |
+
+### 이중 연결 리스트 (Doubly Linked List)
+
+단일 연결 리스트는 `next`만 가지고 있어 한 방향으로만 이동 가능하다. 이중 연결 리스트는 각 노드가 `prev`와 `next`를 모두 가지고 있어 양쪽 방향으로 순회할 수 있다.
+
+```
+None ← [1] ⇄ [2] ⇄ [3] → None
+        head              tail
+```
+
+#### 노드 구현
+
+```python
+class DualNode:
+    def __init__(self, data):
+        self.data = data  # 노드가 저장할 실제 데이터
+        self.prev = None  # 이전 노드를 가리키는 참조
+        self.next = None  # 다음 노드를 가리키는 참조
+```
+
+#### DoublyLinkedList 클래스 구현
+
+head(시작점)와 tail(끝점)을 항상 알고 있어야 한다.
+
+| 메서드 | 설명 |
+|--------|------|
+| `append(data)` | 리스트 끝에 노드 추가 |
+| `appendleft(data)` | 리스트 앞에 노드 추가 |
+| `remove(data)` | 특정 값을 가진 노드 삭제 |
+| `print_forward()` | head → tail 순방향 출력 |
+| `print_backward()` | tail → head 역방향 출력 |
+
+#### append — 끝에 추가
+
+```python
+def append(self, data):
+    new_node = DualNode(data)
+    if self.head is None:
+        self.head = new_node
+        self.tail = new_node
+    else:
+        self.tail.next = new_node   # 현재 tail의 next를 새 노드로
+        new_node.prev = self.tail   # 새 노드의 prev를 현재 tail로
+        self.tail = new_node        # tail을 새 노드로 업데이트
+    self.size += 1
+```
+
+#### appendleft — 앞에 추가
+
+```python
+def appendleft(self, data):
+    new_node = DualNode(data)
+    if self.head is None:
+        self.head = new_node
+        self.tail = new_node
+    else:
+        new_node.next = self.head   # 새 노드의 next를 현재 head로
+        self.head.prev = new_node   # 현재 head의 prev를 새 노드로
+        self.head = new_node        # head를 새 노드로 업데이트
+    self.size += 1
+```
+
+#### remove — 특정 값 삭제
+
+이중 연결 리스트는 `prev`를 이미 알고 있으므로 삭제가 단일 리스트보다 직관적이다. head, tail, 중간 3가지 경우를 처리한다.
+
+```python
+def remove(self, data):
+    current = self.head
+    while current:
+        if current.data == data:
+            if current == self.head:        # head 삭제
+                self.head = current.next
+                if self.head:
+                    self.head.prev = None
+                else:
+                    self.tail = None
+            elif current == self.tail:      # tail 삭제
+                self.tail = current.prev
+                self.tail.next = None
+            else:                           # 중간 노드 삭제
+                current.prev.next = current.next
+                current.next.prev = current.prev
+            self.size -= 1
+            return True
+        current = current.next
+    return False
+```
+
+#### 단일 vs 이중 연결 리스트 비교
+
+| 연산 | 단일 | 이중 |
+|------|------|------|
+| `append()` | O(n) — 끝까지 순회 | **O(1)** — tail 사용 |
+| `appendleft()` | O(1) | O(1) |
+| `pop()` | O(n) — prev를 모름 | **O(1)** — tail.prev 사용 |
+| `popleft()` | O(1) | O(1) |
+| 메모리 | 적음 (next만) | 많음 (prev + next) |
+
+### 원형 연결 리스트 (Circular Linked List)
+
+단일 연결 리스트 구조에서 마지막 노드의 `next`가 `None`이 아닌 다시 `head`를 가리키도록 한 구조이다.
+
+```
+[1] → [2] → [3] → (다시 [1]로)
+ head         tail
+```
+
+#### 구현 핵심
+
+```python
+class CircularLinkedList:
+    def __init__(self):
+        self.head = None
+        self.tail = None
+```
+
+#### append — 끝에 추가
+
+```python
+def append(self, data):
+    new_node = Node(data)
+    if self.is_empty():
+        self.head = new_node
+        self.tail = new_node
+        new_node.next = self.head   # 자기 자신을 가리킴 (원형)
+    else:
+        self.tail.next = new_node   # 기존 tail의 next에 새 노드 연결
+        self.tail = new_node        # tail을 새 노드로 업데이트
+        self.tail.next = self.head  # 새 tail이 다시 head를 가리킴 (원형 유지)
+```
+
+#### 순회 — `__iter__`
+
+원형이므로 다시 head로 돌아오면 종료해야 무한 루프를 방지할 수 있다.
+
+```python
+def __iter__(self):
+    if self.is_empty():
+        return
+    current = self.head
+    while True:
+        yield current.data
+        current = current.next
+        if current == self.head:  # 다시 head로 돌아오면 종료
+            break
+```
+
+### 연결 리스트 종류 총정리
+
+| 종류 | 방향 | 특징 |
+|------|------|------|
+| 단일 연결 리스트 | → | `next`만 있음. 구현이 가장 단순 |
+| 이중 연결 리스트 | ← → | `prev` + `next`. 양방향 순회 가능, `pop()` O(1) |
+| 원형 연결 리스트 | → (순환) | 마지막 노드가 head를 가리킴. 순환 구조 |
 
 ## 스택
 
-추후 추가 예정
+한쪽 끝(top)에서만 자료의 삽입과 삭제가 가능한 **LIFO(Last In First Out)** 형식의 선형 자료구조이다. 가장 나중에 삽입한 자료가 가장 먼저 반환된다.
 
-## 큐 /덱
+단일 연결 리스트의 `appendleft`/`popleft`와 구조가 매우 유사하다.
+
+### 스택 직접 구현
+
+```python
+class Node:
+    def __init__(self, data):
+        self.data = data
+        self.next = None
+
+class Stack:
+    def __init__(self):
+        self.top = None
+```
+
+| 메서드 | 설명 |
+|--------|------|
+| `push(data)` | top에 데이터 추가 |
+| `pop()` | top에서 데이터 꺼내기 |
+| `peek()` | top 데이터 확인 (제거하지 않음) |
+| `is_empty()` | 스택이 비어있는지 확인 |
+
+#### push — top에 추가
+
+```python
+def push(self, data):
+    node = Node(data)
+    node.next = self.top  # top이 None이어도 상관없음
+    self.top = node
+```
+
+#### pop — top에서 꺼내기
+
+```python
+def pop(self):
+    if self.top is None:
+        return None
+    node = self.top
+    self.top = self.top.next
+    return node.data
+```
+
+#### peek — top 확인
+
+```python
+def peek(self):
+    if self.top is None:
+        return None
+    return self.top.data
+```
+
+### 코딩 테스트에서는 list로 구현
+
+```python
+stack = []
+stack.append(4)    # push
+top = stack.pop()  # pop → 4
+top = stack[-1]    # peek (제거하지 않고 확인)
+not stack          # is_empty
+```
+
+| 직접 구현 | `list` |
+|----------|--------|
+| `stack.push(x)` | `stack.append(x)` |
+| `stack.pop()` | `stack.pop()` |
+| `stack.peek()` | `stack[-1]` |
+| `stack.is_empty()` | `not stack` |
+
+### 시간복잡도
+
+| 연산 | 시간복잡도 |
+|------|-----------|
+| `push()` | O(1) |
+| `pop()` | O(1) |
+| `peek()` | O(1) |
+| 탐색 | O(n) |
+
+## 큐 / 덱
 
 추후 추가 예정
