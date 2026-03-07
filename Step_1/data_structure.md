@@ -567,6 +567,174 @@ not stack          # is_empty
 | `peek()` | O(1) |
 | 탐색 | O(n) |
 
-## 큐 / 덱
+## 큐
 
-추후 추가 예정
+한쪽 끝(rear)에서 삽입하고 반대쪽 끝(front)에서 꺼내는 **FIFO(First In First Out)** 형식의 선형 자료구조이다. 가장 먼저 삽입한 자료가 가장 먼저 반환된다.
+
+- 스택과 동일하게 가장 최근에 저장된 값 다음에 새로운 값이 저장
+- 가장 오래전에 저장된 값부터 나간다는 점에서 차이가 있음 즉 FIFO 원칙이 적용됨
+- 스택과 마찬가지로 리스트가 큐의 모든 연산을 지원
+- 리스트는 동적 배열로 구현되어 큐의 연산을 수행하기에 효율적이지 않음 (`pop(0)`이 O(n))
+- 파이썬에서 큐를 구현할 때는 덱을 이용
+
+### 큐 직접 구현
+
+단일 연결 리스트의 `append`/`popleft`와 구조가 매우 유사하다.
+
+```python
+class Node:
+    def __init__(self, data):
+        self.data = data
+        self.next = None
+
+class Queue:
+    def __init__(self):
+        self.front = None
+        self.rear = None
+```
+
+| 메서드 | 설명 |
+|--------|------|
+| `enqueue(data)` | rear에 데이터 추가 |
+| `dequeue()` | front에서 데이터 꺼내기 |
+| `peek()` | front 데이터 확인 (제거하지 않음) |
+| `is_empty()` | 큐가 비어있는지 확인 |
+
+#### enqueue — rear에 추가
+
+```python
+def enqueue(self, data):
+    node = Node(data)
+    if self.rear is None:
+        self.front = node
+        self.rear = node
+    else:
+        self.rear.next = node
+        self.rear = node
+```
+
+#### dequeue — front에서 꺼내기
+
+```python
+def dequeue(self):
+    if self.front is None:
+        return None
+    node = self.front
+    self.front = self.front.next
+    if self.front is None:  # 큐가 비었으면 rear도 None으로
+        self.rear = None
+    return node.data
+```
+
+#### peek — front 확인
+
+```python
+def peek(self):
+    if self.front is None:
+        return None
+    return self.front.data
+```
+
+### 코딩 테스트에서는 deque로 구현
+
+`list`의 `pop(0)`은 O(n)이므로 큐가 필요하면 `collections.deque`를 사용한다.
+
+```python
+from collections import deque
+
+queue = deque()
+queue.append(1)     # enqueue
+queue.append(2)
+val = queue.popleft()  # dequeue → 1
+front = queue[0]       # peek
+not queue              # is_empty
+```
+
+| 직접 구현 | `deque` |
+|----------|---------|
+| `queue.enqueue(x)` | `queue.append(x)` |
+| `queue.dequeue()` | `queue.popleft()` |
+| `queue.peek()` | `queue[0]` |
+| `queue.is_empty()` | `not queue` |
+
+### 시간복잡도
+
+| 연산 | 시간복잡도 (연결 리스트 / deque) | `list`의 경우 |
+|------|-------------------------------|--------------|
+| `enqueue()` | O(1) | O(1) — `append()` |
+| `dequeue()` | O(1) | **O(n)** — `pop(0)` |
+| `peek()` | O(1) | O(1) |
+| 탐색 | O(n) | O(n) |
+
+## 덱 (Deque)
+
+**Double-Ended Queue**의 약자로, 양쪽 끝에서 삽입과 삭제가 모두 가능한 자료구조이다. 스택과 큐의 기능을 모두 포함한다.
+
+```
+← popleft  [front ... rear]  pop →
+← appendleft               append →
+```
+
+### collections.deque
+
+파이썬에서는 `collections.deque`가 덱을 구현한 클래스이다. 내부적으로 이중 연결 리스트로 구현되어 양쪽 끝 연산이 모두 O(1)이다.
+
+```python
+from collections import deque
+
+dq = deque()
+dq.append(1)        # 오른쪽 끝에 추가
+dq.appendleft(0)    # 왼쪽 끝에 추가
+dq.pop()             # 오른쪽 끝에서 꺼내기 → 1
+dq.popleft()         # 왼쪽 끝에서 꺼내기 → 0
+```
+
+### deque 주요 메서드
+
+| 메서드 | 설명 |
+|--------|------|
+| `append(x)` | 오른쪽 끝에 추가 |
+| `appendleft(x)` | 왼쪽 끝에 추가 |
+| `pop()` | 오른쪽 끝에서 꺼내기 |
+| `popleft()` | 왼쪽 끝에서 꺼내기 |
+| `extend(iterable)` | 오른쪽에 여러 요소 추가 |
+| `extendleft(iterable)` | 왼쪽에 여러 요소 추가 (역순으로 들어감) |
+| `rotate(n)` | 오른쪽으로 n칸 회전 (음수면 왼쪽) |
+| `deque(maxlen=n)` | 최대 길이 제한 (초과 시 반대쪽에서 자동 제거) |
+
+### rotate 예시
+
+```python
+dq = deque([1, 2, 3, 4, 5])
+dq.rotate(2)   # deque([4, 5, 1, 2, 3]) — 오른쪽으로 2칸
+dq.rotate(-1)  # deque([5, 1, 2, 3, 4]) — 왼쪽으로 1칸
+```
+
+### maxlen 예시
+
+```python
+dq = deque(maxlen=3)
+dq.append(1)  # deque([1])
+dq.append(2)  # deque([1, 2])
+dq.append(3)  # deque([1, 2, 3])
+dq.append(4)  # deque([2, 3, 4]) — 1이 자동으로 제거됨
+```
+
+### 시간복잡도
+
+| 연산 | `deque` | `list` |
+|------|---------|--------|
+| `append()` | O(1) | O(1) |
+| `appendleft()` | O(1) | **O(n)** — `insert(0, x)` |
+| `pop()` | O(1) | O(1) |
+| `popleft()` | O(1) | **O(n)** — `pop(0)` |
+| `rotate(n)` | O(n) | — |
+| 인덱스 접근 `[i]` | **O(n)** | O(1) |
+
+### 스택 / 큐 / 덱 비교
+
+| 자료구조 | 삽입 위치 | 삭제 위치 | 원칙 | 파이썬 구현 |
+|---------|----------|----------|------|-----------|
+| 스택 | top | top | LIFO | `list` |
+| 큐 | rear | front | FIFO | `deque` |
+| 덱 | 양쪽 | 양쪽 | — | `deque` |
